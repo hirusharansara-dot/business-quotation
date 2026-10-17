@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Business Insurance Quotation</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="logo">Q</div>
+    <div>
+      <h1>Business Insurance Quotation</h1>
+      <p class="subtitle">Select covers • Automatic premium calculation • Print / Save PDF</p>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <form method="post" class="panel">
+    <h2 class="section-title">Business Details & Values</h2>
+    <div class="field" style="margin-bottom:15px">
+      <label for="business_name">BUSINESS NAME</label>
+      <input id="business_name" name="business_name" type="text" placeholder="Enter business name" value="{{ data.business_name }}" required>
+    </div>
+    <div class="grid">
+      <div class="field">
+        <label for="building">A = VALUE OF BUILDING (Rs.)</label>
+        <input id="building" name="building" type="number" min="0" step="0.01" value="{{ data.building }}">
+      </div>
+      <div class="field">
+        <label for="stock">B = VALUE OF STOCK (Rs.)</label>
+        <input id="stock" name="stock" type="number" min="0" step="0.01" value="{{ data.stock }}">
+      </div>
+      <div class="field">
+        <label for="electric_items">C = VALUE OF ELECTRIC ITEMS (Rs.)</label>
+        <input id="electric_items" name="electric_items" type="number" min="0" step="0.01" value="{{ data.electric_items }}">
+      </div>
+      <div class="field">
+        <label for="glasses">D = VALUE OF GLASSES (Rs.)</label>
+        <input id="glasses" name="glasses" type="number" min="0" step="0.01" value="{{ data.glasses }}">
+      </div>
+    </div>
+
+    <hr style="border:0;border-top:1px solid #eee2ac;margin:22px 0">
+    <h2 class="section-title">HEAD = SELECT COVERS</h2>
+    <div class="covers">
+      <label class="cover"><input type="checkbox" name="cover_fire" {% if selected.fire %}checked{% endif %}>
+        <span><strong>E = FIRE</strong><span class="formula">((A + B) ÷ 100) × 0.3</span></span>
+      </label>
+      <label class="cover"><input type="checkbox" name="cover_rcc" {% if selected.rcc %}checked{% endif %}>
+        <span><strong>F = RCC</strong><span class="formula">((A + B) ÷ 100) × 0.05</span></span>
+      </label>
+      <label class="cover"><input type="checkbox" name="cover_burglary" {% if selected.burglary %}checked{% endif %}>
+        <span><strong>G = BURGLARY</strong><span class="formula">((A + B) ÷ 100) × 0.175</span></span>
+      </label>
+      <label class="cover"><input type="checkbox" name="cover_electric_items" {% if selected.electric_items %}checked{% endif %}>
+        <span><strong>H = ELECTRIC ITEMS</strong><span class="formula">(C ÷ 100) × 0.5</span></span>
+      </label>
+      <label class="cover"><input type="checkbox" name="cover_glasses" {% if selected.glasses %}checked{% endif %}>
+        <span><strong>I = GLASSES</strong><span class="formula">(D ÷ 100) × 3</span></span>
+      </label>
+      <label class="cover"><input type="checkbox" name="cover_tc" {% if selected.tc %}checked{% endif %}>
+        <span><strong>J = TC</strong><span class="formula">((A + B) ÷ 100) × 0.0375</span></span>
+      </label>
+    </div>
+    <div class="actions no-print">
+      <button class="primary" type="submit">Calculate Quotation</button>
+      <button type="button" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+    <p class="small-note">Uncheck any cover you do not want. Only selected covers are included in the premium and fee calculations.</p>
+  </form>
+
+  <section class="panel" id="quotation">
+    <div class="quote-head">
+      <div>
+        <h2 class="section-title" style="margin-bottom:5px">QUOTATION SUMMARY</h2>
+        <div><strong>Business:</strong> {{ data.business_name or '—' }}</div>
+      </div>
+      <span class="quote-tag">INSURANCE QUOTATION</span>
+    </div>
+    <div class="table-wrap" style="margin-top:18px">
+      <table>
+        <thead><tr><th>Code</th><th>Cover / Fee</th><th class="amount">Amount (Rs.)</th></tr></thead>
+        <tbody>
+          {% if selected.fire %}<tr><td>E</td><td>FIRE</td><td class="amount">{{ "{:,.2f}".format(premiums.fire) }}</td></tr>{% endif %}
+          {% if selected.rcc %}<tr><td>F</td><td>RCC</td><td class="amount">{{ "{:,.2f}".format(premiums.rcc) }}</td></tr>{% endif %}
+          {% if selected.burglary %}<tr><td>G</td><td>BURGLARY</td><td class="amount">{{ "{:,.2f}".format(premiums.burglary) }}</td></tr>{% endif %}
+          {% if selected.electric_items %}<tr><td>H</td><td>ELECTRIC ITEMS</td><td class="amount">{{ "{:,.2f}".format(premiums.electric_items) }}</td></tr>{% endif %}
+          {% if selected.glasses %}<tr><td>I</td><td>GLASSES</td><td class="amount">{{ "{:,.2f}".format(premiums.glasses) }}</td></tr>{% endif %}
+          {% if selected.tc %}<tr><td>J</td><td>TC</td><td class="amount">{{ "{:,.2f}".format(premiums.tc) }}</td></tr>{% endif %}
+          <tr><td></td><td><strong>Cover Premium Subtotal (E–J)</strong></td><td class="amount"><strong>{{ "{:,.2f}".format(cover_sum) }}</strong></td></tr>
+          <tr><td>K</td><td>ADMIN FE (3% of E–J)</td><td class="amount">{{ "{:,.2f}".format(admin_fee) }}</td></tr>
+          <tr><td>L</td><td>POLICY FE</td><td class="amount">{{ "{:,.2f}".format(policy_fee) }}</td></tr>
+          <tr><td>M</td><td>VAT (18% of E–J)</td><td class="amount">{{ "{:,.2f}".format(vat) }}</td></tr>
+          <tr class="total-row"><td></td><td>TOTAL</td><td class="amount">{{ "{:,.2f}".format(total) }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small-note">Amounts are calculated using the formulas supplied. Confirm applicable rates and taxes with the insurer before issuing the quotation.</p>
+    <div class="actions no-print">
+      <button type="button" class="primary" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+  </section>
+</main>
+</body>
+</html>
